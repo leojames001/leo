@@ -1,0 +1,61 @@
+import re
+import bs4
+import urllib.request  
+from bs4 import BeautifulSoup 
+import urllib.parse
+import sys
+import time
+import socket
+import os
+
+#先建立一个存储爬虫结果的文件
+#进入工作目录
+os.chdir('C:\\Users\\klzz\\Desktop')
+os.getcwd()
+file=open(r"号段结果.txt",'w')
+#打开你要查询的号段文档
+f = open(r"查询号段.txt")
+#设置超时时间
+socket.setdefaulttimeout(30)
+#防止反爬虫，构造合理的HTTP请求头
+headers = {"User-Agent":"Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.99 Safari/537.36"}
+while True:
+    #按行读取文档
+    search_item = f.readline()
+	#如果读取完了就退出
+    if not search_item:
+        print("Finished")
+        break
+    #print (search_item)
+    while True:
+        try:
+            url = 'http://www.ip138.com:8080/search.asp?mobile='+urllib.parse.quote(search_item)+'&action=mobile'
+            #print(url)
+			#用来抓取网页的html源代码
+            html = urllib.request.urlopen(url)  
+            html.encoding = 'gb2312'
+			#用来代替正则式取源码中相应标签中的内容
+            soup = BeautifulSoup(html, "lxml")  
+            res = soup.find('tr',bgcolor="#EFF1F3")
+            res1=res.next_sibling.next_sibling.find('td',class_="tdc2").get_text()
+            res1=res1.strip()
+            if len(res1)==0:
+                province=''
+                city=''
+            else:
+                res1=res.next_sibling.next_sibling.find('td',class_="tdc2").get_text()
+                province=res1.split()[0]
+                if len(res1.split())==1:
+                    city = res1.split()[0]+'市'
+                else :
+                    city = res1.split()[1]
+            type1 =res.next_sibling.next_sibling.next_sibling.next_sibling.find('td',class_="tdc2").get_text()
+            file.write("{},{},{},{}".format(province, city, type1,search_item))
+            print("search result:","{},{},{},{}".format(province, city, type1,search_item))
+            html.close()
+            break
+        except :
+            print("Failed!Please wait!")
+            time.sleep(15)
+f.close()
+file.close()
